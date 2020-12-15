@@ -1,0 +1,8 @@
+numpy==1.18.5
+requests==2.24.0
+torch==1.5.1
+wget==3.2
+rasterio==1.1.5
+tqdm==4.47.0
+s2cloudless==1.4.0
+
