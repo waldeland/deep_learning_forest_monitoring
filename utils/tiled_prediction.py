@@ -12,7 +12,7 @@ def tiled_prediction(
     patch_overlap=None,
     apply_classifier=False,
     apply_softmax=False,
-    batch_size=8,
+    batch_size=32,
     precision="float",
 ):
     """

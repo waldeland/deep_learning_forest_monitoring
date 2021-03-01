@@ -1,18 +1,14 @@
 import datetime
+import warnings
 import fnmatch
 import os
-
-import json
 import time
-
 import numpy as np
 import rasterio
 import shutil
-from rasterio import crs
 from rasterio._warp import Resampling
-from rasterio.warp import reproject, calculate_default_transform
-from xml.etree import ElementTree
-
+from rasterio.warp import reproject
+from s2cloudless import S2PixelCloudDetector
 
 
 _bands_10m= ["b02", "b03", "b04", "b08"]
@@ -21,14 +17,13 @@ _bands_60m= ["b01", "b09", "b10"]
 _all_bands = _bands_10m + _bands_20m + _bands_60m
 _bands_used_in_cloud_detection = ['b01', 'b02', 'b04', 'b05', 'b08', 'b8a', 'b09', 'b10', 'b11', 'b12']
 
-def convert_sentinel2(path_to_SAFE_folder, output_path,
+def convert_sentinel2(path_to_SAFE_folder,
                       output_resolution=10,
                       cloud_detection_resolution = 60,
                       n_threads = 10,
                       delete_safe_file=True):
 
-
-    from s2cloudless import S2PixelCloudDetector
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
 
     if path_to_SAFE_folder[-1] == '/':
         path_to_SAFE_folder = path_to_SAFE_folder[:-1]
@@ -139,9 +134,8 @@ def convert_sentinel2(path_to_SAFE_folder, output_path,
 
     print(" - Cloud detection finished")
 
-
-
     # Save memory maps
+    print(" - Creating 10m resolution data-cube")
     bands = ["b02", "b03", "b04", "b08", "b05", "b06", "b07", "b8a", "b11", "b12", "b01", "b09", "b10"]
     bands_data = []
     for band_name in bands:
@@ -149,9 +143,15 @@ def convert_sentinel2(path_to_SAFE_folder, output_path,
         data_at_res[data_at_res==0] = np.nan #Insert np.nan as nodata value
         bands_data.append(data_at_res.squeeze().astype('float16'))
 
+    bands_data = [d[:, :, None] for d in bands_data]
+    bands_data = np.concatenate(bands_data, -1)
+
     if delete_safe_file:
         print(' - Deleting SAFE file', path_to_SAFE_folder)
         shutil.rmtree(path_to_SAFE_folder)
+
+    warnings.filterwarnings("default", category=DeprecationWarning)
+
     return bands_data, cloud_mask, target_transform, target_crs
 
 

@@ -5,6 +5,7 @@ import rasterio
 import torch
 
 import numpy as np
+from rasterio._base import Affine
 from rasterio.crs import CRS
 
 from utils.data_download import download_file_from_google_drive, download_sentinel_data
@@ -20,7 +21,17 @@ if not os.path.isfile(_model_path):
 
 
 
-def predict_scene(product_id, output_path):
+def predict_scene(product_id, output_path, subcrop=None):
+    """
+
+    Args:
+        product_id:
+        output_path:
+        slice:
+
+    Returns:
+
+    """
 
     model = UNet(n_classes=1, in_channels=13, start_filts=32, use_bn=True, partial_conv=True)
     model.load_state_dict(torch.load(_model_path, map_location=lambda storage, loc: storage))
@@ -29,15 +40,21 @@ def predict_scene(product_id, output_path):
 
 
     path_to_safe_folder = download_sentinel_data(product_id, output_path)
-    data_cube, cloud_mask, transform, crs = convert_sentinel2(path_to_safe_folder, output_path)
+    data_cube, cloud_mask, transform, crs = convert_sentinel2(path_to_safe_folder)
 
-    data_cube = [d[:, :, None] for d in data_cube]
-    data_cube = np.concatenate(data_cube,-1)
     no_data_mask = np.isnan(data_cube)
     data_cube[no_data_mask] = 0
 
+    if subcrop is not None:
+        data_cube = data_cube[subcrop[0]:subcrop[1], subcrop[2]:subcrop[3], :]
+        no_data_mask = no_data_mask[subcrop[0]:subcrop[1], subcrop[2]:subcrop[3], :]
+        transform = np.array(transform)
+        transform[2] = transform[2] + subcrop[0]*transform[0]
+        transform[5] = transform[5] + subcrop[2]*transform[4]
+        transform = Affine(*transform[:6])
+
     print('Predicting')
-    tree_height = tiled_prediction(data_cube, model, [512, 512], [128, 128]).squeeze()
+    tree_height = tiled_prediction(data_cube, model, [512, 512], [64, 64]).squeeze()
     tree_height = np.clip(tree_height, 0, np.inf)
     tree_height[np.sum(no_data_mask,2)>0] = -1
 
@@ -64,7 +81,7 @@ def predict_scene(product_id, output_path):
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
-    p.add_argument('-p', '--product',default='S2A_MSIL1C_20170126T073151_N0204_R049_T37MDQ_20170126T074339', type=str ,help='Sentinel-2 product identfier')
+    p.add_argument('-p', '--product',default='S2A_MSIL1C_20170126T073151_N0204_R049_T37MDQ_20170126T074339', type=str ,help='Sentinel-2 product identifier')
     p.add_argument('-o', '--output', type=str, default='.' , help='Path to folder for output')
     p = p.parse_args()
     predict_scene(p.product, p.output)
