@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 
 
-def clear_cutting_detection(data, t_threshold=17.4, min_change = 5):
+def clear_cutting_detection(data, t_threshold=11.7, min_change = 5):
     """
     Proposed clear cutting detection scheme
     Args:
@@ -182,9 +182,10 @@ if __name__ == '__main__':
     # Load vegetation height predictions
     data_cube = []
     for pid in s2_ids:
-        with rasterio.open(pid+'.tif') as f:
+        with rasterio.open(os.path.join(output_path, pid+'.tif')) as f:
             data_cube.append(np.squeeze(f.read())[:,:,None])
     data_cube = np.concatenate(data_cube,-1)
+    data_cube[data_cube==-1] = np.nan
 
     # Run change detection
     detections = clear_cutting_detection(data_cube, t_threshold=11.4, min_change=5)
