@@ -188,7 +188,7 @@ if __name__ == '__main__':
     data_cube[data_cube==-1] = np.nan
 
     # Run change detection
-    detections = clear_cutting_detection(data_cube, t_threshold=11.4, min_change=5)
+    detections = clear_cutting_detection(data_cube, t_threshold=11.7, min_change=5)
 
     # Export:
     with rasterio.open(os.path.join(output_path,  s2_ids[0]+'.tif'), 'r') as src:
