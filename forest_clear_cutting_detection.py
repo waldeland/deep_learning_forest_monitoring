@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 
 
-def clear_cutting_detection(data, t_threshold=11.7, min_change = 5):
+def clear_cutting_detection(data, t_threshold=11.7, min_change = 5, filter_on_morphology=True):
     """
     Proposed clear cutting detection scheme
     Args:
@@ -61,10 +61,13 @@ def clear_cutting_detection(data, t_threshold=11.7, min_change = 5):
 
     #Filtering detections
     detections = max_t > t_threshold
-    detections = np.bitwise_and(detections, MU_before - MU_after > min_change)
-    detections = skimage.morphology.remove_small_objects(detections, min_size=10, connectivity=1, in_place=False)
+    height_change = MU_before - MU_after
+    detections = np.bitwise_and(detections, height_change > min_change)
 
-    return detections
+    if filter_on_morphology:
+        detections = skimage.morphology.remove_small_objects(detections, min_size=10, connectivity=1, in_place=False)
+
+    return detections, (max_t, height_change, index_with_max_t)
 
 if __name__ == '__main__':
     from predict_scene import predict_scene
@@ -188,7 +191,7 @@ if __name__ == '__main__':
     data_cube[data_cube==-1] = np.nan
 
     # Run change detection
-    detections = clear_cutting_detection(data_cube, t_threshold=11.7, min_change=5)
+    detections, _ = clear_cutting_detection(data_cube, t_threshold=11.7, min_change=5)
 
     # Export:
     with rasterio.open(os.path.join(output_path,  s2_ids[0]+'.tif'), 'r') as src:
