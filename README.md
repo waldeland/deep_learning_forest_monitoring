@@ -3,7 +3,10 @@
 Code for the paper:<br />
 **Forest mapping and monitoring of the African continent using Sentinel-2 data and deep learning**,<br />
 Anders U. Waldeland,  Øivind Due Trier,  Arnt-Børre Salberg <br />
-[*Preprint submitted for Remote Sensing of Environment*](https://www.journals.elsevier.com/remote-sensing-of-environment)
+International Journal of Applied Earth Observations and Geoinformation <br />
+111 (2022) 102840<br />
+
+[*Link to paper*](https://doi.org/10.1016/j.jag.2022.102840)
  
 
 
